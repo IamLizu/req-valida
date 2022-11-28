@@ -1,6 +1,6 @@
 {
     "name": "req-valida",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "A strict request validate middleware intended for ExpressJS.",
     "exports": {
         ".": {
