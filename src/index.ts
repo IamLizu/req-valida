@@ -1,20 +1,23 @@
 import createError from "http-errors";
 import { Request, Response, NextFunction } from "express";
 
+type validationObjectType = {
+    location: "body" | "query" | "params";
+    data: {
+        [key: string]: {
+            rules: [string, RegExp];
+            isOptional?: boolean;
+        };
+    };
+    isOptional?: boolean;
+};
+
 /**
  * Validate the request for expected data.
  * Passes the request to the next middleware if the validation passes or fails.
  * @param {object} validationObject - The object containing the validation rules.
  */
-export function validate({
-    location,
-    data,
-    isOptional,
-}: {
-    location: "body" | "query" | "params";
-    data: { [key: string]: [string, RegExp] };
-    isOptional?: boolean;
-}) {
+export function validate({ location, data, isOptional }: validationObjectType) {
     return async function (request: Request, _: Response, next: NextFunction) {
         try {
             if (!location) {
@@ -33,7 +36,11 @@ export function validate({
             }
 
             for (const key in data) {
-                if (request[location][key] === undefined && !isOptional) {
+                if (
+                    request[location][key] === undefined &&
+                    !isOptional &&
+                    !data[key].isOptional
+                ) {
                     next(
                         createError(
                             400,
@@ -44,24 +51,28 @@ export function validate({
 
                 const commonErrorMessage = `'${
                     request[location][key]
-                }' must be '${data[key][0]}', received as '${typeof request[
-                    location
-                ][key]}'.`;
+                }' must be '${
+                    data[key].rules[0]
+                }', received as '${typeof request[location][key]}'.`;
 
                 const invalidRegexValidationMessage = `'${request[location][key]}' is not a valid ${key}.`;
 
-                // data[key][1], will have the regex to validate the data if provided.
+                // data[key].rules[1], will have the regex to validate the data if provided.
 
                 // type-check of variable, should be always checked before regex check.
                 // otherwise, regex will pass wrong data types checks as okay
-                if (typeof request[location][key] !== data[key][0]) {
+                if (
+                    request[location][key] &&
+                    typeof request[location][key] !== data[key].rules[0]
+                ) {
                     next(createError(400, commonErrorMessage));
                 }
 
                 // regex validation
                 if (
-                    data[key][1] &&
-                    !data[key][1].test(request[location][key].toString())
+                    request[location][key] &&
+                    data[key].rules[1] &&
+                    !data[key].rules[1].test(request[location][key].toString())
                 ) {
                     next(createError(400, invalidRegexValidationMessage));
                 }
