@@ -68,8 +68,17 @@ export function validate({ location, data, isOptional }: validationObjectType) {
                     next(createError(400, commonErrorMessage));
                 }
 
+                let isValid = true;
+
+                try {
+                    new RegExp(data[key].rules[1]);
+                } catch (error) {
+                    isValid = false;
+                }
+
                 // regex validation
                 if (
+                    isValid &&
                     request[location][key] &&
                     data[key].rules[1] &&
                     !data[key].rules[1].test(request[location][key].toString())
