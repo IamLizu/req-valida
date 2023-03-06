@@ -25,6 +25,15 @@ export function validate({ location, data, isOptional }: validationObjectType) {
                 next(createError(500, "Internal Server Error"));
             }
 
+            if (
+                location !== "body" &&
+                location !== "query" &&
+                location !== "params"
+            ) {
+                console.error(`Invalid location provided - '${request.path}'`);
+                next(createError(500, "Internal Server Error"));
+            }
+
             if (!data) {
                 console.error(`Data is missing - '${request.path}'`);
                 next(createError(500, "Internal Server Error"));
@@ -44,7 +53,7 @@ export function validate({ location, data, isOptional }: validationObjectType) {
                     next(
                         createError(
                             400,
-                            `'${key}' in request ${location} is missing`
+                            `Missing field '${key}' in request ${location}.`
                         )
                     );
                 }
@@ -68,17 +77,20 @@ export function validate({ location, data, isOptional }: validationObjectType) {
                     next(createError(400, commonErrorMessage));
                 }
 
-                let isValid = true;
-
-                try {
-                    new RegExp(data[key].rules[1]);
-                } catch (error) {
-                    isValid = false;
+                if (
+                    data[key].rules[1] &&
+                    !(data[key].rules[1] instanceof RegExp)
+                ) {
+                    next(
+                        createError(
+                            500,
+                            `Invalid regex provided for '${key}' in request ${location}.`
+                        )
+                    );
                 }
 
                 // regex validation
-                if (
-                    isValid &&
+                else if (
                     request[location][key] &&
                     data[key].rules[1] &&
                     !data[key].rules[1].test(request[location][key].toString())
@@ -92,7 +104,7 @@ export function validate({ location, data, isOptional }: validationObjectType) {
                     next(
                         createError(
                             400,
-                            `Unexpected field '${key}' in request ${location}.'`
+                            `Unexpected field '${key}' in request ${location}.`
                         )
                     );
                 }
