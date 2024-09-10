@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import * as createError from "http-errors";
+import createError from "http-errors";
 
 type validationObjectType = {
     location: "body" | "query" | "params";
