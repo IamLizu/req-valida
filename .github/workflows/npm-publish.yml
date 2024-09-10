@@ -5,7 +5,7 @@ on:
         types: [created]
 
 jobs:
-    build:
+    test:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
@@ -23,7 +23,7 @@ jobs:
               run: yarn test --verbose --coverage
 
     publish-npm:
-        needs: build
+        needs: test
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
@@ -37,6 +37,9 @@ jobs:
 
             - name: Install dependencies
               run: yarn install --frozen-lockfile
+
+            - name: Build package
+              run: yarn build
 
             - name: Publish package
               run: yarn publish
